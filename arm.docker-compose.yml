@@ -1,0 +1,49 @@
+version: "2"
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: arm.Dockerfile
+    # logging:
+    #   driver: "none"
+    volumes:
+      - ./nginx:/usr/share/nginx/html:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - expose-hardware
+      - get-data
+
+  expose-hardware:
+    build:
+      context: ./expose-hardware
+      dockerfile: arm.Dockerfile
+    volumes:
+      - ./expose-hardware:/usr/src/app:rw
+      - /lib/modules:/lib/modules:rw
+    # devices:
+      # - /dev/mem
+    cap_add:
+      - SYS_RAWIO
+    privileged: true
+    # ports:
+    #   - "80:80"    
+    #   - "5858:5858"
+
+  get-data:
+    build:
+      context: ./get-data
+      dockerfile: arm.Dockerfile
+    volumes:
+      - ./get-data:/usr/src/app:rw
+      - /lib/modules:/lib/modules:rw
+    # devices:
+      # - /dev/mem
+    cap_add:
+      - SYS_RAWIO
+    privileged: true
+#    ports:
+#      - "80:80"    
+#      - "5858:5858"

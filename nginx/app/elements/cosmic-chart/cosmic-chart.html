@@ -1,0 +1,140 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../../bower_components/paper-styles/typography.html">
+
+<dom-module id="cosmic-chart">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+      }
+      
+      google-chart {
+        height: auto;
+        min-height: 50vh;
+        width: auto;
+      }
+    </style>
+
+    <google-chart id="cosmicChart" type="scatter"></google-chart>
+
+  </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      Polymer({
+        is: 'cosmic-chart',
+
+        properties: {
+          alias: {
+            type: String,
+            value: 'twoPaddle',
+            notify: true
+          }
+        }
+
+        
+      });
+
+      var options = {
+    title: 'Double Paddle Detector',
+    titleTextStyle: {
+      bold: false
+    },
+    explorer: {
+      axis: 'horizontal',
+      keepInBounds: true,
+      maxZoomOut: 1,
+      maxZoomIn: 0.01
+    },
+    series: {
+      0: {
+        axis: 'Counts',
+        pointSize: 2
+      },
+      1: {
+        axis: 'Rolling Average',
+        lineWidth: 3,
+        pointsVisible: 0
+      }
+    }
+  };
+
+        //Grab some data from api
+  var xmlhttp = new XMLHttpRequest();
+  var url = "";// = "data/twoPaddle/json?select={\"where\":{\"createdAt\":{\"$gte\":}},\"attributes\":[\"CPM\",\"createdAt\"]}";
+  var select = {}
+  var selectTime = {};
+
+
+  selectTime.$gte = (Date.now()-((24*60*60*1000) * 500)); //500 days ago
+  
+  select.where = {createdAt : selectTime};
+  select.attributes = ["createdAt","CPM"]; //Ask to get x then y
+
+  url += "data";
+  url += "/";
+  url += "twoPaddle";
+  url += "/";
+  url += "json";
+  url += "?";
+  url += "select";
+  url += "=";
+  url += JSON.stringify(select);
+
+  console.log(url);
+
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      var myArr = JSON.parse(xmlhttp.responseText);
+      
+      myFunction(myArr);
+    }
+  };
+  xmlhttp.open("GET", url, true);
+  xmlhttp.send();
+
+  function myFunction(arr) {
+    //Convert all dates to javascript dates
+    var dataArray = [];
+    console.log(arr);
+    dataArray[0] = Object.keys(arr.data[0]);
+    for(event in arr.data){
+      //Fill the array with empty arrays
+      for(var column in dataArray[0]){
+        dataArray[Number(event)+1] = [];
+      }
+      //Push the data we have into them
+      for(var column in dataArray[0]){
+        //THe first collum should always be the date
+        if(column == 0){
+          dataArray[Number(event)+1].push(new Date(arr.data[event][dataArray[0][column]]));
+        }else{
+        dataArray[Number(event)+1].push(arr.data[event][dataArray[0][column]]);
+        }
+      }
+    }
+    var cosmicChart = document.getElementById("cosmicChart");
+    cosmicChart.options = options;
+    cosmicChart.data = dataArray;
+
+  }
+
+  window.onresize = function(){
+    document.getElementById("cosmicChart").redraw();
+  }
+    })();
+  </script>
+</dom-module>

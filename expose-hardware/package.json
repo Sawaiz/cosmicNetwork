@@ -1,0 +1,16 @@
+{
+  "name": "exposeHardware",
+  "version": "1.0.0",
+  "description": "Exposes rasberry pi MPPC interface",
+  "author": "Sawaiz Syed asyed5@gsu.edu",
+  "main": "server.js",
+  "scripts": {
+    "start": "npm install --no-bin-links && nodemon -L --debug=5858 server.js"
+  },
+  "dependencies": {
+    "raspi": "*",
+    "raspi-i2c": "*",
+    "express" : "*"
+  }
+}
+

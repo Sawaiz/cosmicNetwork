@@ -1,0 +1,15 @@
+{
+  "name": "getData",
+  "version": "1.0.0",
+  "description": "Gets counts and sends them to servers",
+  "author": "Sawaiz Syed asyed5@gsu.edu",
+  "main": "server.js",
+  "scripts": {
+    "start": "npm install --no-bin-links && nodemon -L --debug=5858 server.js"
+  },
+  "dependencies": {
+    "onoff": "*",
+    "nodemon": "*",
+    "express": "*"
+  }
+}
