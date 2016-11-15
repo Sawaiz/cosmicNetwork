@@ -20,7 +20,7 @@ RUN npm install -g nodemon
 # Set wokring directory
 WORKDIR /usr/src/app
 
-# Expose the default port
+# Expose the debug port
 EXPOSE 5858
 
 # Start node

@@ -18,7 +18,7 @@ var voltageDump = require('./voltageDump');
 var NEO6m = require('./neo6m.js');
 var gps = new NEO6m();
 
-var port = process.env.PORT || 80; // set our port
+var port = process.env.PORT || 8000; // set our port
 
 console.log("Server started");
 

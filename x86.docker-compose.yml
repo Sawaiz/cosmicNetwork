@@ -13,14 +13,14 @@ services:
       - "80:80"
       - "443:443"
     links:
-      - node
+      - expose-db
 
-  node:
+  expose-db:
     build: 
-      context: ./node
+      context: ./expose-db
       dockerfile: x86.Dockerfile
     volumes:
-      - ./node:/usr/src/app:ro
+      - ./expose-db:/usr/src/app:rw
     ports:
       - "5858:5858"
     links:
