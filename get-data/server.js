@@ -70,6 +70,7 @@ app.use('/get-data', router);
 // START THE SERVER
 // =============================================================================
 app.listen(port);
+console.log('Get-Data running on port: ' + port);
 
 function startLogging(time) {
     //create a file, named by the start time

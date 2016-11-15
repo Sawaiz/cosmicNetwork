@@ -5,10 +5,10 @@ services:
     build:
       context: ./nginx
       dockerfile: arm.Dockerfile
-    # logging:
-    #   driver: "none"
+    logging:
+      driver: "none"
     volumes:
-      - ./nginx:/usr/share/nginx/html:ro
+      - ./nginx/app:/usr/share/nginx/html:ro
     ports:
       - "80:80"
       - "443:443"
@@ -28,9 +28,6 @@ services:
     cap_add:
       - SYS_RAWIO
     privileged: true
-    # ports:
-    #   - "80:80"    
-    #   - "5858:5858"
 
   get-data:
     build:
@@ -44,6 +41,3 @@ services:
     cap_add:
       - SYS_RAWIO
     privileged: true
-#    ports:
-#      - "80:80"    
-#      - "5858:5858"

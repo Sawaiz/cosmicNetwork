@@ -46,7 +46,7 @@ var router = express.Router();              // get an instance of the express Ro
 
 // Base route with info (accessed at GET http://localhost:80/api/db)
 router.get('/', function(req, res) {
-    res.send("<p>Welcome to the API '/', availible options are /tableName , /mppcInterface/0x08</p>");
+    res.send("<p>Welcome to the API '/', availible options are /tableName , /add/tableName</p>");
 });
 
 router.get('/:tableName', function(req, res) {
@@ -124,7 +124,7 @@ app.use('/api/db', router);
 // START THE SERVER
 // =============================================================================
 app.listen(config.apiPort);
-console.log('Magic happens on port ' + config.apiPort);
+console.log('Expose DB running on port: ' + config.apiPort);
 
 function jsonToCsv(jsonObject) {
     var buffer = "";

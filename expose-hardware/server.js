@@ -1,34 +1,32 @@
 //Nodejs server contoling GPIO for HV/LV
 //Config.js file has all the sttings
-var MPPC_INTERFACE_ADDR = 0x08;
-var apiKey = "5309583059353902309";
+var config = require('./config')
 
 var express = require('express');
 var app = express();
 
-//Api Imports
-var readVoltage = require('./readVoltage');
-var readTarget = require('./readTarget');
-var setTarget = require('./setTarget');
-var readTemp = require('./readTemp');
+//mppcHV import
+var mppcHV = require('./mppcHV');
+var mppcInterface = config.mppcInterface;
+for(board in mppcInterface){
+    mppcInterface[board] = new mppcHV(mppcInterface[board]);
+}
 
-var voltageDump = require('./voltageDump');
+for(board in mppcInterface){
+    mppcInterface[board].voltageDump();
+}
 
 //GPS import
-var NEO6m = require('./neo6m.js');
+var NEO6m = require('./neo6m');
 var gps = new NEO6m();
-
-var port = process.env.PORT || 8000; // set our port
-
-console.log("Server started");
 
 // ROUTES FOR OUR API
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
 
-// Base route with info to make sure everything is working (accessed at GET http://localhost:80/api)
+// Base route with info
 router.get('/', function (req, res) {
-    res.send("<p>Welcome to the API '/', availible options are /gps , /mppcInterface/0x08</p>");
+    res.send("<p>Welcome to the API '/', availible options are /gps , /mppcInterface/0</p>");
 });
 
 router.get('/gps', function (req, res) {
@@ -46,24 +44,25 @@ router.get('/gps', function (req, res) {
     }
 });
 
-router.get('/mppcInterface/:SLAVE_ADDR', function (req, res) {
-    var SLAVE_ADDR = Number(req.params.SLAVE_ADDR);
+router.get('/mppcInterface/:board', function (req, res) {
+    var board = Number(req.params.board);
     var data = {};
-    data.boardADDR = SLAVE_ADDR;
+    data.board = board;
+    data.boardADDR = mppcInterface[board].SLAVE_ADDR;
     data.channel = [];
     for (var channelNo = 0; channelNo < 8; channelNo++) {
         data.channel.push({});
-        data.channel[channelNo].target = readTarget(SLAVE_ADDR, channelNo);
-        data.channel[channelNo].voltage = readVoltage(SLAVE_ADDR, channelNo);
-        data.channel[channelNo].temp = readTemp(SLAVE_ADDR, channelNo);
+        data.channel[channelNo].target = mppcInterface[board].readTarget(channelNo);
+        data.channel[channelNo].voltage = mppcInterface[board].readVoltage(channelNo);
+        data.channel[channelNo].temp = mppcInterface[board].readTemp(channelNo);
     }
     res.json(data);
 });
 
-router.post('/mppcInterface/:SLAVE_ADDR/', function (req, res) {
-    if (req.query.apiKey == apiKey) {
-        var SLAVE_ADDR = Number(req.params.SLAVE_ADDR);
-        setTarget(SLAVE_ADDR, Number(req.query.channel), Number(req.query.target));
+router.post('/mppcInterface/:board/', function (req, res) {
+    if (req.query.apiKey == config.apiKey) {
+        var board = Number(req.params.board);
+        mppcInterface[board].setTarget(Number(req.query.channel), Number(req.query.target));
         res.json(req.query);
     } else {
         res.json({ error: "Check API key" })
@@ -72,10 +71,10 @@ router.post('/mppcInterface/:SLAVE_ADDR/', function (req, res) {
 });
 
 // REGISTER OUR ROUTES -------------------------------
-// all of our routes will be prefixed with /api
-app.use('/api', router);
+// all of our routes will be prefixed with the route location
+app.use(config.routeLocation, router);
 
 // START THE SERVER
 // =============================================================================
-app.listen(port);
-console.log('Magic happens on port ' + port);
+app.listen(config.port);
+console.log('Expose Hardware running on port: ' + config.port);

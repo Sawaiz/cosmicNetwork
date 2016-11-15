@@ -1,0 +1,3 @@
+# Send nothing but the config file to context 
+*
+!nginx.conf

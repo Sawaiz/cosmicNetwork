@@ -1,3 +1,18 @@
+## Installing
+dd to copy a blank image
+```bash
+dd bs=4M if=/cygdrive/c/Users/sawaiz/Desktop/2016-09-23-raspbian-jessie-lite.img of=/dev/sdb
+```
+nmap to find ip address of pi
+```bash
+nmap
+```
+Copy ssh id
+```bash
+ssh-copy-id pi@10.50.0.106
+```
+expand filesystem, enable i2c
+
 
 How to install docker and adocker compose, I think this should work onx86 and ARM
 ```bash
