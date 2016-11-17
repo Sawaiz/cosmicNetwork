@@ -1,0 +1,106 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+
+<!--
+`mppc-set-voltage`
+Change target voltage
+-->
+
+<dom-module id="mppc-set-voltage">
+  <template>
+  <style include="iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+      paper-button {
+        text-align: right;
+      }
+    </style>
+    <div class="layout vertical">
+      <paper-input label = "Target" value= {{target}} auto-validate pattern="[0-9.0-9]*" error-message="numbers only!" suffix>
+        <div suffix>Volts</div>
+      </paper-input>
+      <paper-button center-justified on-tap="updateVoltage" raised>Set Voltage</paper-button>
+    </div>
+      <paper-toast id="toast" text="Board [[board]], Ch [[channel]] set to [[target]] Volts"></paper-toast>
+
+    <iron-ajax 
+      id="changeAjax" 
+      url="[[url]]"
+      params='[[params]]'
+      method = "POST" 
+      handle-as="json" 
+      on-response="handleResponse" 
+      debounce-duration="300">
+    </iron-ajax>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'mppc-set-voltage',
+
+      properties: {
+        url: {
+          type: String,
+          computed: "computeURL(board)",
+        },
+        target: {
+          type: Number,
+          value: null,
+        },
+        board: {
+          type: Number,
+          value: null,
+        },
+        channel: {
+          type: Number,
+          value: null,
+        },
+        apiKey: {
+          type: String,
+          value: null,
+        },
+        params: {
+          type: String,
+          computed: "computeParams(channel, apiKey, target)",
+        },
+      },
+
+      computeURL: function(board, channel){
+        return "/api/hardware/mppcInterface/" + this.board;
+      },
+
+      computeParams: function(channel, apiKey, target){
+        var buffer = {};
+        buffer.channel = this.channel.toString();
+        buffer.target = this.target.toString();
+        buffer.apiKey = this.apiKey;
+        return buffer;
+      },
+
+      handleResponse: function (data) {
+        this.data = data.detail.response;
+        if(this.data.channel){
+          this.$.toast.open();
+        } else{
+          console.log("error");
+        }
+        
+      },
+
+      updateVoltage: function(){
+        this.$.changeAjax.generateRequest();
+      }
+
+    });
+
+  </script>
+</dom-module>

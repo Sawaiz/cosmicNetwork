@@ -15,12 +15,12 @@ var logging;
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
 
-// Base route with info to make sure everything is working (accessed at GET http://localhost:80/get-data)
+// Base route with info to make sure everything is working (accessed at GET http://localhost:80/api/getdata)
 router.get('/', function (req, res) {
     res.send("<p>Welcome to the API '/', availible options are /startLog, /stopLog , /logs, /logs/<fileName>.</p>");
 });
 
-router.get('/beginLog', function (req, res) {
+router.post('/beginLog', function (req, res) {
     if (logging) {
         res.json({ error: "Currently Logging", data: logging.data });
         return 0;
@@ -28,20 +28,20 @@ router.get('/beginLog', function (req, res) {
     if (req.query.duration) {
         logging = startLogging(req.query.duration);
         res.json({
-            sucsess: 0
+            sucsess: "Started Logging",
+            data: logging.data
         });
     } else {
         res.json({
-            error: 1,
-            reason: "missing duration"
+            error: "Missing Duration",
         });
     }
 });
 
-router.get('/stopLog', function (req, res) {
+router.post('/stopLog', function (req, res) {
     if (logging) {
         clearInterval(logging.interval);
-        res.json({ sucsess: "logging stopped", data: logging.data });
+        res.json({ sucsess: "Logging stopped", data: logging.data });
         for (pin in pins) {
             pins[pin][2].number.unwatchAll();
         }

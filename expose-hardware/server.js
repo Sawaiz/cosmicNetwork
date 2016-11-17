@@ -12,10 +12,6 @@ for(board in mppcInterface){
     mppcInterface[board] = new mppcHV(mppcInterface[board]);
 }
 
-for(board in mppcInterface){
-    mppcInterface[board].voltageDump();
-}
-
 //GPS import
 var NEO6m = require('./neo6m');
 var gps = new NEO6m();

@@ -1,0 +1,87 @@
+<!--<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-button/paper-button.html">-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../mppc-set-voltage/mppc-set-voltage.html">
+
+
+<!--
+`mppc-voltage`
+Displays and allows setting of mppc voltage
+
+@demo demo/index.html 
+-->
+
+<dom-module id="mppc-voltage">
+  <!-- import classes in an element -->
+  <template>
+    <style include="iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+      div.channel {
+        margin: 5px;
+      }
+    </style>
+
+    <h1>Board [[board]]</h1>
+    <div class="layout horizontal wrap">
+      <template is="dom-repeat" items="[[data.channel]]">
+        <div class="channel">
+          <h3>Channel [[index]]<h3>
+          <p>[[item.voltage]]</p>
+          <p>[[item.temp]]</p>
+          <mppc-set-voltage api-key = "5309583059353902309" board = "0" channel = [[index]] target= [[item.target]]></mppc-set-voltage>
+        </div>
+    </div>
+    </template>
+
+    <!--Gets data-->
+    <iron-ajax 
+      auto 
+      url="[[url]]"
+      handle-as="json" 
+      on-response="handleResponse" 
+      debounce-duration="300">
+    </iron-ajax>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'mppc-voltage',
+
+      properties: {
+        url: {
+          type: String,
+          computed: "computeURL(board)",
+        },
+        board: {
+          type: Number,
+          value: 0,
+        },
+        data: {
+          type: Object,
+        },
+      },
+
+      computeURL: function(board){
+        return "/api/hardware/mppcInterface/" + this.board;
+      },
+
+      handleResponse: function (data) {
+        this.data = data.detail.response;
+      },
+
+    });
+
+  </script>
+</dom-module>

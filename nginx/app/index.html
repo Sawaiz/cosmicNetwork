@@ -121,12 +121,17 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <div class="content">
           <iron-pages attr-for-selected="data-route" selected="{{route}}">
             <section data-route="home" tabindex="-1">
+              <!--<cosmic-chart alias="twoPaddle"></cosmic-chart>-->
+
+             <paper-material class="page-title" elevation="1">
+                <control-logging board="0"></control-logging>
+              </paper-material>
               
               <paper-material class="page-title" elevation="1">
-                <cosmic-chart alias="twoPaddle"></cosmic-chart>.
+                <mppc-voltage board="0"></mppc-voltage>
               </paper-material>
-
             </section>
+
 
             <section data-route="users" tabindex="-1">
               <paper-material elevation="1">

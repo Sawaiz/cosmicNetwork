@@ -1,0 +1,101 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+
+<!--
+`control-logging`
+Start or stop logging procedure
+-->
+
+<dom-module id="control-logging">
+  <template>
+  <style include="iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <paper-input label = "Interval" value= {{time}} auto-validate pattern="[0-9.0-9]*" error-message="numbers only!" suffix>
+        <div suffix>Seconds</div>
+    </paper-input>
+    <div class="layout horizontal">
+      <paper-button center-justified on-tap="startLogging" raised>Start Logging</paper-button>
+      <paper-button center-justified on-tap="stopLogging" raised>Stop Logging</paper-button>
+    </div>
+      <paper-toast id="toast" text="[[data.sucsess]] [[data.error]] [[data.data.filename]]"></paper-toast>
+
+    <iron-ajax 
+      id="changeAjax" 
+      url="[[url]]"
+      params='[[params]]'
+      method = "POST" 
+      handle-as="json" 
+      on-response="handleResponse" 
+      debounce-duration="300">
+    </iron-ajax>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'control-logging',
+
+      properties: {
+        url: {
+          type: String,
+          computed: "computeURL(action)",
+        },
+        time: {
+          type: Number,
+          value: 60,
+        },
+        apiKey: {
+          type: String,
+          value: null,
+        },
+        action: {
+          type: String,
+        },
+        data: {
+          type: Object,
+        },
+        params: {
+          type: String,
+          computed: "computeParams(time, apiKey)",
+        },
+      },
+
+      computeURL: function(_action){
+        return "/get-data/" + this.action;
+      },
+
+      computeParams: function(time, apiKey){
+        var buffer = {};
+        buffer.duration = this.time*1000;
+        buffer.apiKey = this.apiKey;
+        return buffer;
+      },
+
+      handleResponse: function (data) {
+        this.data = data.detail.response;
+        this.$.toast.open();        
+      },
+
+      startLogging: function(){
+        this.action = "beginLog";
+        this.$.changeAjax.generateRequest();
+      },
+      stopLogging: function(){
+        this.action = "stopLog";
+        this.$.changeAjax.generateRequest();
+      }
+
+    });
+
+  </script>
+</dom-module>
