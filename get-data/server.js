@@ -96,7 +96,12 @@ function startLogging(time) {
 
     for (pin in pins) {
         pins[pin].push(new coincidence(pins[pin][1]));
-        pins[pin][2].number.watch(function (err, value) {
+        //Callback requires a scoped pin number
+        setWatch(pin);
+    }
+
+    function setWatch(pin){
+      pins[pin][2].number.watch(function (err, value) {
             pins[pin][2].count++;
         });
     }
