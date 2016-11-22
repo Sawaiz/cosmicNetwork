@@ -12,17 +12,16 @@ var sequelize = new Sequelize(config.dbName, config.dbUser, config.dbPasswd, {
     host: config.dbHost,
     dialect: config.dbDialect,
     define: {
-        //prevent sequelize from pluralizing table names
+        // Prevent sequelize from pluralizing table names
         freezeTableName: true
     }
 });
 
-// buildTestTables()
-
-// build Detector Table
+// Sync detector model, create table if it does not exist
 var detector = sequelize.import(__dirname + "/detector.model.js");
 sequelize.sync();
 
+// List of all the tables, they are named by thier alias
 var tables = [];
 getModels(function(models) {
     for (index in models) {
@@ -34,9 +33,9 @@ getModels(function(models) {
 var apiKeys = {};
 detector
     .findAll({ "attributes": ["alias", "apiKey"] })
-    .then(function(detectorKey) {
-        if (detectorKey.length != 0) {
-            apiKeys[detectorKey[0].alias] = detectorKey[0].apiKey;
+    .then(function(detectorKey) {   
+        for (key in detectorKey) {
+            apiKeys[detectorKey[key].alias] = detectorKey[key].apiKey;
         }
     });
 
@@ -93,7 +92,6 @@ router.post('/add/:tableName', function(req, res) {
         //create a new table here
         createTable(req.query.alias, JSON.parse(req.query.fields));
 
-
         getTableByName(tableName).create(req.query)
             .then(function(response) {
                 res.json(response);
@@ -101,9 +99,9 @@ router.post('/add/:tableName', function(req, res) {
                 res.json(err);
             });
 
-    } else if (req.query.key == apiKeys[tableName] && req.query.key != null) {
+    } else if (req.query.apiKey == apiKeys[tableName] && req.query.apiKey != null) {
         //Check if apikey exists
-        delete req.query.key;
+        delete req.query.apiKey;
         getTableByName(tableName).create(req.query)
             .then(function(response) {
                 res.json(response);
@@ -112,7 +110,7 @@ router.post('/add/:tableName', function(req, res) {
             });
 
     } else {
-        res.json({ error: "Key does not match", query: req.query });
+        res.json({ error: "apiKey does not match", query: req.query });
     }
 
 });
@@ -182,48 +180,6 @@ function createTable(alias, schemaRaw) {
     });
 }
 
-function buildTestTables() {
-    var detector = sequelize.import(__dirname + "/detector.model.js");
-    sequelize.sync()
-        .then(function() {
-            detector.create({
-                name: "Drug Loard Griffin",
-                description: " a legendary creature with the body, tail, and back legs of a lion",
-                alias: "griffin",
-                tags: "guarding ,priceless ,possessions",
-                fields: "{ \
-                oneAndTwo    : Sequelize.INTEGER, \
-                oneAndThree  : Sequelize.INTEGER, \
-                oneAndFour   : Sequelize.INTEGER, \
-                twoAndThree  : Sequelize.INTEGER, \
-                twoAndFour   : Sequelize.INTEGER, \
-                threeAndFour : Sequelize.INTEGER, \
-            }",
-                location: "Egypt",
-                apiKey: "Egypt",
-                public: true
-            }).catch(function(err) {
-                console.log(JSON.stringify(err, null, 2));
-            });
-        });
-
-    var sawaiz = sequelize.define("sawaiz", {
-        height: Sequelize.INTEGER,
-        width: Sequelize.INTEGER,
-        depth: Sequelize.INTEGER
-    });
-
-    sequelize.sync().then(function() {
-        sawaiz.create({
-            height: 500,
-            width: 500,
-            depth: 500,
-        });
-    });
-
-
-}
-
 function getDatabaseInfoObject(tableName, select, callback) {
     var pathName = tableName;
     for (index in tables) {
@@ -259,6 +215,7 @@ function stringToSequelizeType(stringInput) {
     }
 }
 
+//Gets the model of a table, and then converts it to a sequelize model
 function getModels(callback) {
 
     var tables = [];

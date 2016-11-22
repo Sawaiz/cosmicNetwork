@@ -10,6 +10,7 @@
   "dependencies": {
     "onoff": "*",
     "nodemon": "*",
-    "express": "*"
+    "express": "*",
+    "request": "*"
   }
 }

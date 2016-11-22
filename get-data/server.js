@@ -1,15 +1,29 @@
-const fs = require('fs'); //Accsess the filesystem
 var config = require('./config');
-var GPIO = require('onoff').Gpio; // Constructor function for Gpio objects.
+
 var express = require('express');
+var fs = require('fs');
 
 var app = express();
-var port = process.env.PORT || config.apiPort; // set our port
-
-var led = new GPIO(14, 'out');    // Export GPIO #14 as an output.
-var pins = config.pins;
 
 var logging;
+
+//Create the fields to log from interupt pins
+config.detector.fields = {};
+for (pin in config.pins) {
+    config.detector.fields[config.pins[pin][0]] = "int(11)";
+}
+// Add the sensors into the fields
+for (getter in config.sensors) {
+    config.detector.fields[config.sensors[getter].name] = "varchar(255)";
+}
+
+// Begin watching coincidence pins
+var Coincidence = require("./coincidence");
+var coincidence = new Coincidence(config.pins);
+
+// Data destination: Where to send the data db connection stays "open"
+var LogToDB = require("./logToDB");
+var db = new LogToDB(config.databaseLocation, config.detector);
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -22,33 +36,19 @@ router.get('/', function (req, res) {
 
 router.post('/beginLog', function (req, res) {
     if (logging) {
-        res.json({ error: "Currently Logging", data: logging.data });
-        return 0;
-    }
-    if (req.query.duration) {
-        logging = startLogging(req.query.duration);
-        res.json({
-            sucsess: "Started Logging",
-            data: logging.data
-        });
+        res.json({ error: "Alerady Logging", data: logging.data  });
     } else {
-        res.json({
-            error: "Missing Duration",
-        });
+        logging = beginLog(req.query.duration);
+        res.json({ sucsess: "Begin Logging ", data: logging.data });
     }
 });
 
 router.post('/stopLog', function (req, res) {
     if (logging) {
-        clearInterval(logging.interval);
         res.json({ sucsess: "Logging stopped", data: logging.data });
-        for (pin in pins) {
-            pins[pin][2].number.unwatchAll();
-        }
-        logging = undefined;
+        endLog();
     } else {
-        res.json({ error: "Not Currently Logging" });
-        return 0;
+        res.json({ error: "No Current Run" });
     }
 });
 
@@ -69,66 +69,45 @@ app.use('/get-data', router);
 
 // START THE SERVER
 // =============================================================================
-app.listen(port);
-console.log('Get-Data running on port: ' + port);
+app.listen(config.apiPort);
+console.log('Get-Data running on port: ' + config.apiPort);
 
-function startLogging(time) {
-    //create a file, named by the start time
-    var fileName = new Date().toISOString();
-    header = "date,";
-    for (pin in pins) {
-        header += pins[pin][0];
-        if (pin < pins.length - 1) {
-            header += ",";
-        }
-    }
-    header += "\n";
+function beginLog(duration) {
 
-    if (!fs.existsSync(config.logDir)) {
-        fs.mkdirSync(config.logDir);
-    }
+    // Reset conincidence numbers to 0
+    coincidence.log();
 
-    //Write just the header to the file
-    fs.writeFile(config.logDir + "/" + fileName + ".log", header, function (err) {
-        if (err) throw err;
-        console.log("Logging started in " + fileName);
-    });
+    // Destination, a new log file is made every time
+    var LogToFile = require("./logToFile");
+    var file = new LogToFile(config.logDir, config.detector);
 
-    for (pin in pins) {
-        pins[pin].push(new coincidence(pins[pin][1]));
-        //Callback requires a scoped pin number
-        setWatch(pin);
-    }
-
-    function setWatch(pin){
-      pins[pin][2].number.watch(function (err, value) {
-            pins[pin][2].count++;
-        });
-    }
-
-    function coincidence(number) {
-        this.number = new GPIO(number, 'in', 'falling');
-        this.count = 0;
-    }
-
-    function writeCountsToFile() {
-        var logLine = new Date().toISOString() + ",";
-        for (pin in pins) {
-            logLine += pins[pin][2].count.toString();
-            pins[pin][2].count = 0;
-            if (pin < pins.length - 1) {
-                logLine += ",";
-            } else {
-                logLine += "\n";
-            }
-        }
-        fs.appendFile(config.logDir + "/" + fileName + ".log", logLine, function (err) {
-        });
+    function logData() {
+        var dataObj = aggregateData();
+        file.log(dataObj);
+        db.log(dataObj);
     }
 
     //Every x miliseconds, write the current counts to file
     return {
-        data: { filename: fileName, header: header },
-        interval: setInterval(writeCountsToFile, time)
+        data: { filename: file.fileName },
+        interval: setInterval(logData, duration)
     }
+}
+
+function endLog() {
+    clearInterval(logging.interval);
+    logging = undefined;
+}
+
+function aggregateData() {
+    var data = {};
+
+    Object.assign(data, coincidence.log());
+
+    // Go through all the sensor functions and call them
+    for (getter in config.sensors) {
+        Object.assign(data, config.sensors[getter]());
+    }
+
+    return data;
 }

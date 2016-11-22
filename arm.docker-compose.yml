@@ -15,6 +15,7 @@ services:
     links:
       - expose-hardware
       - get-data
+      - expose-db
 
   expose-hardware:
     build:
@@ -41,3 +42,26 @@ services:
     cap_add:
       - SYS_RAWIO
     privileged: true
+
+  expose-db:
+    build: 
+      context: ./expose-db
+      dockerfile: arm.Dockerfile
+    volumes:
+      - ./expose-db:/usr/src/app:rw
+    ports:
+      - "5858:5858"
+    links:
+      - db
+
+  db:
+    image: hypriot/rpi-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=cosmicRoot
+      - MYSQL_DATABASE=cosmic
+      - MYSQL_USER=cosmic
+      - MYSQL_PASSWORD=cosmicUser
+    volumes:
+      - ../db:/var/lib/mysql:rw
+    ports: 
+      - "3306:3306"
