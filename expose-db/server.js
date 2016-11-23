@@ -23,7 +23,7 @@ sequelize.sync();
 
 // List of all the tables, they are named by thier alias
 var tables = [];
-getModels(function(models) {
+getModels(function (models) {
     for (index in models) {
         tables[index] = sequelize.define(models[index].name, models[index].schema);
     }
@@ -33,7 +33,7 @@ getModels(function(models) {
 var apiKeys = {};
 detector
     .findAll({ "attributes": ["alias", "apiKey"] })
-    .then(function(detectorKey) {   
+    .then(function (detectorKey) {
         for (key in detectorKey) {
             apiKeys[detectorKey[key].alias] = detectorKey[key].apiKey;
         }
@@ -44,11 +44,11 @@ detector
 var router = express.Router();              // get an instance of the express Router
 
 // Base route with info (accessed at GET http://localhost:80/api/db)
-router.get('/', function(req, res) {
+router.get('/', function (req, res) {
     res.send("<p>Welcome to the API '/', availible options are /tableName , /add/tableName</p>");
 });
 
-router.get('/:tableName', function(req, res) {
+router.get('/:tableName', function (req, res) {
     var tableName = req.params.tableName;
     var select = JSON.parse(req.query.select || "{}");
     var type = req.query.type;
@@ -58,15 +58,21 @@ router.get('/:tableName', function(req, res) {
         switch (type) {
             case "json":
                 //serve json
-                getDatabaseInfoObject(tableName, select, function(meta, tableData) {
+                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
                     res.json({ meta: meta, data: tableData });
                 });
                 break;
 
             case "csv":
                 //serve csv                
-                getDatabaseInfoObject(tableName, select, function(meta, tableData) {
+                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
                     res.send(jsonToCsv(tableData));
+                });
+                break;
+            case "chart":
+                //serve google chart element compatible
+                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
+                    res.json(jsonToChart(tableData));
                 });
                 break;
 
@@ -83,7 +89,7 @@ router.get('/:tableName', function(req, res) {
     }
 });
 
-router.post('/add/:tableName', function(req, res) {
+router.post('/add/:tableName', function (req, res) {
     var tableName = req.params.tableName;
     //this is where we take data that we get
     if (tableName == "detector") {
@@ -93,9 +99,9 @@ router.post('/add/:tableName', function(req, res) {
         createTable(req.query.alias, JSON.parse(req.query.fields));
 
         getTableByName(tableName).create(req.query)
-            .then(function(response) {
+            .then(function (response) {
                 res.json(response);
-            }, function(err) {
+            }, function (err) {
                 res.json(err);
             });
 
@@ -103,9 +109,9 @@ router.post('/add/:tableName', function(req, res) {
         //Check if apikey exists
         delete req.query.apiKey;
         getTableByName(tableName).create(req.query)
-            .then(function(response) {
+            .then(function (response) {
                 res.json(response);
-            }, function(err) {
+            }, function (err) {
                 res.json(err);
             });
 
@@ -123,6 +129,15 @@ app.use('/api/db', router);
 // =============================================================================
 app.listen(config.apiPort);
 console.log('Expose DB running on port: ' + config.apiPort);
+
+function jsonToChart(data) {
+    var formattedData = [];
+    formattedData.push(Object.keys(data[0].dataValues));
+    for(var line in data){
+        formattedData.push(Object.values(data[line].dataValues));
+    }
+    return formattedData;
+}
 
 function jsonToCsv(jsonObject) {
     var buffer = "";
@@ -169,9 +184,9 @@ function createTable(alias, schemaRaw) {
         schema[key] = stringToSequelizeType(schemaRaw[key]);
     }
     var newTable = sequelize.define(alias, schema);
-    sequelize.sync().then(function() {
+    sequelize.sync().then(function () {
         //rebuild get all the tables
-        getModels(function(models) {
+        getModels(function (models) {
             for (index in models) {
                 tables[index] = sequelize.define(models[index].name, models[index].schema);
             }
@@ -188,10 +203,10 @@ function getDatabaseInfoObject(tableName, select, callback) {
                 name: tables[index].name
             };
             tables[index].findAll(select)
-                .then(function(tableData) {
+                .then(function (tableData) {
                     callback(meta, tableData);
                 },
-                function(err) {
+                function (err) {
                     callback({ name: "error" }, err);
                 });
         }
@@ -221,13 +236,13 @@ function getModels(callback) {
     var tables = [];
     var tableList = [];
 
-    sequelize.query("SHOW TABLES").then(function(tablesArray) {
+    sequelize.query("SHOW TABLES").then(function (tablesArray) {
         for (table in tablesArray[0]) {
             tableList.push(tablesArray[0][table].Tables_in_cosmic);
         }
         return tableList;
-    }).each(function(table) {
-        sequelize.query("DESCRIBE " + table).then(function(descriptionList) {
+    }).each(function (table) {
+        sequelize.query("DESCRIBE " + table).then(function (descriptionList) {
             var tableInfo = {};
             var schema = {};
 
@@ -274,7 +289,7 @@ function getModels(callback) {
             tableInfo.name = table;
             tableInfo.schema = schema;
             tables.push(tableInfo);
-        }).then(function() {
+        }).then(function () {
             if (tables.length == tableList.length) {
                 callback(tables);
             }
