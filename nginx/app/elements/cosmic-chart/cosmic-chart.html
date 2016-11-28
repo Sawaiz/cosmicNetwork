@@ -1,7 +1,9 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 <link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
@@ -15,22 +17,50 @@ Start or stop logging procedure
 
 <dom-module id="cosmic-chart">
   <template>
-  <style include="iron-flex iron-flex-alignment"></style>
+    <style include="iron-flex iron-flex-alignment"></style>
     <style>
       :host {
         display: block;
       }
-
+      
+      paper-material {
+        padding: 0;
+      }
+      
+      .header {
+        padding-left: 20px;
+        padding-left: 20px;
+      }
+      
       google-chart {
-        height: auto;
-        min-height: 50vh;
         width: auto;
+      }
+      
+      paper-tabs {
+        --paper-tabs-selection-bar-color: black;
       }
     </style>
 
-    <google-chart id="cosmicChart" type="scatter" data={{chartData}}></google-chart>   
-    
-     
+    <paper-material elevation="1">
+
+      <div class="header">
+        <h1>Lloyd Wright</h1>
+        <p>First three paddle detector, 2mmx2mm 50uM pixel size TSV MPPC Attached to 145mmx145mm plastic scintilator pannel
+          with embedded fibers.</p>
+        <paper-tabs selected={{_duration}}>
+          <paper-tab>1D</paper-tab>
+          <paper-tab>7D</paper-tab>
+          <paper-tab>1M</paper-tab>
+          <paper-tab>3M</paper-tab>
+          <paper-tab>1Y</paper-tab>
+          <paper-tab>5Y</paper-tab>
+          <paper-tab>MAX</paper-tab>
+        </paper-tabs>
+      </div>
+      <google-chart id="cosmicChart" type="scatter" options=[[options]] data={{chartData}}></google-chart>
+    </paper-material>
+
+
 
     <!--<paper-input label = "Interval" value= {{time}} auto-validate pattern="[0-9.0-9]*" error-message="numbers only!" suffix>
         <div suffix>Seconds</div>
@@ -42,11 +72,11 @@ Start or stop logging procedure
       <paper-toast id="toast" text="[[data.sucsess]] [[data.error]] [[data.data.filename]]"></paper-toast>-->
 
     <iron-ajax 
-      auto
+      auto 
       id="getChart" 
-      url="[[url]]"
-      params='[[params]]'
-      method = "GET" 
+      url="[[url]]" 
+      params='[[params]]' 
+      method="GET" 
       handle-as="json" 
       on-response="handleResponse"
       debounce-duration="300">
@@ -67,6 +97,17 @@ Start or stop logging procedure
           type: String,
           value: "lloydWright",
         },
+        options: {
+          type: Object,
+          computed: "computeOptions(alias)",
+        },
+        _duration: {
+          type: Number,
+          value: 0,
+        },
+        attributes: {
+          type: Object,
+        },
         apiKey: {
           type: String,
           value: null,
@@ -79,7 +120,7 @@ Start or stop logging procedure
         },
         params: {
           type: String,
-          computed: "computeParams(apiKey)",
+          computed: "computeParams(_duration, attributes)",
         },
       },
 
@@ -87,26 +128,88 @@ Start or stop logging procedure
         return "/api/db/" + this.alias;
       },
 
-      computeParams: function(time, apiKey){
+      computeParams: function(_duration, attributes){
         var buffer = {};
+
+        // Limit of days
+        switch(this._duration){
+          case 0:
+            // One day
+            buffer.limitDays = 0;
+            buffer.averageMin = 5;
+            break;
+          case 1:
+            // One Week
+            buffer.limitDays = 7;
+            buffer.averageMin = 30;            
+            break;
+          case 2:
+            // One Month
+            buffer.limitDays = 30;
+            buffer.averageMin = 24*60;            
+            break;
+          case 3:
+            // Three Month
+            buffer.limitDays = 90;
+            buffer.averageMin = 24*60;
+            
+            break;
+          case 4:
+            // One Year
+            buffer.limitDays = 365;
+            buffer.averageMin = 24*60;            
+            break;
+          case 5:
+            // Five Years
+            buffer.limitDays = (365 * 5) + 1 ;
+            buffer.averageMin = 24*60;            
+            break
+          default:
+            // max
+            buffer.limitDays = -1;
+            buffer.averageMin = 24*60;            
+        }
+
         buffer.select = {};
         buffer.type = "chart";
         buffer.select.attributes = [];
         buffer.select.attributes.push("createdAt");
-        buffer.select.attributes.push("Zero and One");
-        buffer.select.attributes.push("Zero and Two");
-        buffer.select.attributes.push("One and Two");
+        var attributes = JSON.parse(this.attributes.replace(/\'/g, '"'));
+        for(item in attributes){
+          buffer.select.attributes.push(attributes[item]);
+        }
+        console.log(buffer)        
+        
         buffer.select = JSON.stringify(buffer.select);
         return buffer;
       },
 
+      computeOptions: function(alias){
+        var options = {};
+        options.axisTitlesPosition = "in";
+        options.chartArea = {};
+        options.chartArea.left = 0;
+        options.chartArea.top = 0;
+        options.chartArea.width = "100%";
+        options.chartArea.height = "100%";
+        options.vAxis = {};
+        options.hAxis = {};
+        options.vAxis.textPosition = "in";
+        options.hAxis.textPosition = "in";
+        // options.hAxis.viewWindow = {};
+        // options.hAxis.viewWindow.max = new Date();
+        // options.hAxis.viewWindow.min = oneDay().$gte;        
+        options.pointSize = 3;
+        return options;
+      },
+
       handleResponse: function (data) {
+        // Convert date column to date object
         for(item in data.detail.response){
           if(item > 0){
            data.detail.response[item][0] = new Date(Date.parse(data.detail.response[item][0]));
           }
         }
-        console.log(data.detail.response);
         this.chartData = data.detail.response;
       },
 
@@ -120,6 +223,66 @@ Start or stop logging procedure
       }
 
     });
+
+    // Funcitons to create proper time stamps
+    function oneDay(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        return select.where.createdAt;
+    }
+
+    function oneWeek(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        select.where.createdAt.$gte.setUTCDate(select.where.createdAt.$gte.getUTCDate()-7);
+        return select.where.createdAt;
+    }
+
+    function oneMonth(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        select.where.createdAt.$gte.setUTCMonth(select.where.createdAt.$gte.getUTCMonth()-1);
+        return select.where.createdAt;
+    }
+
+    function threeMonth(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        select.where.createdAt.$gte.setUTCMonth(select.where.createdAt.$gte.getUTCMonth()-3);
+        return select.where.createdAt;
+    }
+
+    function oneYear(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        select.where.createdAt.$gte.setUTCFullYear(select.where.createdAt.$gte.getUTCFullYear()-1);
+        return select.where.createdAt;
+    }
+
+    function fiveYear(){
+        var select = {};
+        select.where = {};
+        select.where.createdAt = {};
+        select.where.createdAt.$gte = new Date();
+        select.where.createdAt.$gte.setUTCHours(0,0,0,0);
+        select.where.createdAt.$gte.setUTCFullYear(select.where.createdAt.$gte.getUTCFullYear()-5);
+        return select.where.createdAt;
+    }
 
   </script>
 </dom-module>

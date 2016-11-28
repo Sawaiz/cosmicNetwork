@@ -6,7 +6,23 @@ var Sequelize = require("sequelize");
 var express = require('express');
 var config = require('./config');
 
+var dataAccess = require("./dataAccess");
+
 var app = express();
+
+
+// [
+//     detectorObject, dataAcsessInstance
+// ]
+// 
+// {
+//     alias: name,
+//     apiKey: kdljfslkf-fsjfs-fsfs
+//     name: fjslkfjs
+//     descriptopn
+//     ....
+// }
+
 
 var sequelize = new Sequelize(config.dbName, config.dbUser, config.dbPasswd, {
     host: config.dbHost,
@@ -53,26 +69,36 @@ router.get('/:tableName', function (req, res) {
     var select = JSON.parse(req.query.select || "{}");
     var type = req.query.type;
 
-    //If the table exists, return it.
-    if (getTableByName(tableName)) {
+    // If the table exists, return it.
+    var tableSelected = new dataAccess(getTableByName(tableName));
+    if (tableSelected) {
         switch (type) {
             case "json":
                 //serve json
-                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
-                    res.json({ meta: meta, data: tableData });
+                var tableSelected = new dataAccess(getTableByName(tableName));
+                tableSelected.select(select).queryAll(function (dataResponse) {
+                    res.send(dataResponse.json());
                 });
                 break;
 
             case "csv":
                 //serve csv                
-                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
-                    res.send(jsonToCsv(tableData));
+                var tableSelected = new dataAccess(getTableByName(tableName));
+                tableSelected.select(select).queryAll(function (dataResponse) {
+                    res.send(dataResponse.csv());
                 });
                 break;
             case "chart":
                 //serve google chart element compatible
-                getDatabaseInfoObject(tableName, select, function (meta, tableData) {
-                    res.json(jsonToChart(tableData));
+                tableSelected.select(select).limitDays(req.query.limitDays).queryAll(function (dataResponse) {
+                    res.send(dataResponse.averageMin(req.query.averageMin).chart());
+                });
+                break;
+            case "test":
+                var lloydWright = new dataAccess(getTableByName("lloydWright"));
+                select = { attributes: ["createdAt", "Zero", "One"], where: { Zero: { $gte: 0 } } };
+                lloydWright.select(select).limitDays(0).queryAll(function (dataResponse) {
+                    res.send(dataResponse.averageMin(5).chart());
                 });
                 break;
 
@@ -130,43 +156,6 @@ app.use('/api/db', router);
 app.listen(config.apiPort);
 console.log('Expose DB running on port: ' + config.apiPort);
 
-function jsonToChart(data) {
-    var formattedData = [];
-    formattedData.push(Object.keys(data[0].dataValues));
-    for(var line in data){
-        formattedData.push(Object.values(data[line].dataValues));
-    }
-    return formattedData;
-}
-
-function jsonToCsv(jsonObject) {
-    var buffer = "";
-    //Print header
-    var headerNumber = 0;
-    for (keys in jsonObject[0].dataValues) {
-        buffer += keys;
-        headerNumber++;
-        if (headerNumber < Object.keys(jsonObject[0].dataValues).length) {
-            buffer += ",";
-        } else {
-            buffer += "\r\n";
-        }
-    }
-    for (line in jsonObject) {
-        var keyNumber = 0;
-        for (key in jsonObject[line].dataValues) {
-            buffer += JSON.stringify(jsonObject[line][key]);
-            keyNumber++;
-            if (keyNumber < Object.keys(jsonObject[line].dataValues).length) {
-                buffer += ",";
-            } else {
-                buffer += "\r\n";
-            }
-        }
-    }
-    return buffer;
-}
-
 //look through tablesname to see if we have that table
 function getTableByName(tableName) {
     for (index in tables) {
@@ -193,24 +182,6 @@ function createTable(alias, schemaRaw) {
             sequelize.sync();
         });
     });
-}
-
-function getDatabaseInfoObject(tableName, select, callback) {
-    var pathName = tableName;
-    for (index in tables) {
-        if (tables[index].name == pathName) {
-            var meta = {
-                name: tables[index].name
-            };
-            tables[index].findAll(select)
-                .then(function (tableData) {
-                    callback(meta, tableData);
-                },
-                function (err) {
-                    callback({ name: "error" }, err);
-                });
-        }
-    }
 }
 
 function stringToSequelizeType(stringInput) {
