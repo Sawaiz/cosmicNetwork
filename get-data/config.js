@@ -1,6 +1,6 @@
 var config = {};
 
-config.databaseLocation = "http://10.50.0.106";
+config.databaseLocation = "http://expose-db:8000";
 config.apiPort = 8000;
 config.logDir = "./logs"
 

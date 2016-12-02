@@ -65,7 +65,7 @@ router.get('/logs/:log', function (req, res) {
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api, but nginx will send us there
-app.use('/get-data', router);
+app.use('/api/getdata', router);
 
 // START THE SERVER
 // =============================================================================
