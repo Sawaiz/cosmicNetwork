@@ -1,4 +1,35 @@
 ## Installing
+
+Diskpart to clean the disk, linux will use something else
+```bash
+sawaiz@roc> diskpart                                                                                                  
+
+Microsoft DiskPart version 10.0.14393.0
+
+Copyright (C) 1999-2013 Microsoft Corporation.
+On computer: ROC
+
+DISKPART> list disk
+
+  Disk ###  Status         Size     Free     Dyn  Gpt
+  --------  -------------  -------  -------  ---  ---
+  Disk 0    Online          119 GB  1024 KB
+  Disk 1    Online         7600 MB  3072 KB
+
+DISKPART> select disk 1
+
+Disk 1 is now the selected disk.
+
+DISKPART> clean
+
+DiskPart succeeded in cleaning the disk.
+
+DISKPART> exit
+
+Leaving DiskPart...
+
+```
+
 dd to copy a blank image
 ```bash
 dd bs=4M if=/cygdrive/c/Users/sawaiz/Desktop/2016-09-23-raspbian-jessie-lite.img of=/dev/sdb
@@ -47,12 +78,18 @@ ssh-copy-id pi@10.50.0.106
 expand filesystem, enable i2c
 
 
+```bash
+sudo apt-get update && sudo apt-get install git && git clone http://github.com/sawaiz/cosmicNetwork && cd cosmicNetwork && sudo ./setup.sh
+```
+
 How to install docker and a docker compose, I think this should work onx86 and ARM
 ```bash
 curl -sSL https://get.docker.com | sh
 sudo apt-get -y install python-pip
 sudo pip install docker-compose
 ```
+
+Fix your ntp clock if you are on a corporate network that has ntp porblems, no RTC on a pi, so clock must get from network.
 
 Installing a samba server on the pi lets you make a network mount, and then you can edit code locally.
 ```bash
