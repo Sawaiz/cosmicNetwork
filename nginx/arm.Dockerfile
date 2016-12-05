@@ -39,4 +39,4 @@ WORKDIR /usr/share/nginx/html
 EXPOSE 80 443
 
 # Start nginx through the npm package.josn file
-ENTRYPOINT ["npm" "start"]
+ENTRYPOINT ["npm","start"]

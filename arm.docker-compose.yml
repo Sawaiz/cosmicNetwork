@@ -8,7 +8,7 @@ services:
     # logging:
     #   driver: "none"
     volumes:
-      - ./nginx/app:/usr/share/nginx/html:ro
+      - ./nginx:/usr/share/nginx/html:rw
     ports:
       - "80:80"
       - "443:443"
