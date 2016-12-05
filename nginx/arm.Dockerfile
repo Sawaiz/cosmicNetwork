@@ -17,6 +17,9 @@ RUN ln -s `which nodejs` /usr/local/bin/node
 # NPM Install globals
 RUN npm install -g bower
 
+# Install nginx
+RUN apt-get update && apt-get install -y nginx
+
 # Forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
