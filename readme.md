@@ -14,7 +14,7 @@ ssh-copy-id pi@10.50.0.106
 expand filesystem, enable i2c
 
 
-How to install docker and adocker compose, I think this should work onx86 and ARM
+How to install docker and a docker compose, I think this should work onx86 and ARM
 ```bash
 curl -sSL https://get.docker.com | sh
 sudo apt-get -y install python-pip

@@ -1,16 +1,23 @@
-# Dockerfile to build iot webserver
+# Dockerfile with node and wiring pi
 # Based on debian with nginx installed
 
-# Set the base image to jessie
-FROM resin/rpi-raspbian:jessie
+# Set the base image to nginx
+FROM hypriot/rpi-node
 
 # File Author / Maintainer
 MAINTAINER asyed5@gsu.edu
 
-#Update
-RUN apt-get update && apt-get install -y nginx
+# Install wiringPi
+RUN git clone git://git.drogon.net/wiringPi
+RUN cd wiringPi && ./build
 
-# forward request and error logs to docker log collector
+# Symlink nodejs to node
+RUN ln -s `which nodejs` /usr/local/bin/node
+
+# NPM Install globals
+RUN npm install -g bower
+
+# Forward request and error logs to docker log collector
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
@@ -28,5 +35,5 @@ WORKDIR /usr/share/nginx/html
 # Expose the default ports
 EXPOSE 80 443
 
-# Start nginx
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+# Start nginx through the npm package.josn file
+ENTRYPOINT ["npm" "start"]
